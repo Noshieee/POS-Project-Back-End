@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModels')
 
@@ -21,7 +21,7 @@ router.get("/:id", getUser, (req, res, next) => {
 res.send(res.user);
 });
 
-// LOGIN user with email + password
+// SIGN-IN user with email & password
 router.patch("/", async (req, res, next) => {
 const { email, password } = req.body;
 const user = await User.findOne({ email });
@@ -31,20 +31,18 @@ if (await bcrypt.compare(password, user.password)) {
     try {
     const access_token = jwt.sign(
         JSON.stringify(user),
-        process.env.JWT_SECRET_KEY
+        process.env.JWT_TOKEN_KEY
     );
     res.status(201).json({ jwt: access_token });
     } catch (error) {
     res.status(500).json({ message: error.message });
     }
 } else {
-    res
-    .status(400)
-    .json({ message: "Email and password combination do not match" });
+    res.status(400).json({ message: "Email and password combination do not match" });
 }
 });
 
-// REGISTER a user
+// REGISTER user
 router.post("/", async (req, res, next) => {
 const { name, email, contactNumber, password } = req.body;
 
@@ -105,6 +103,7 @@ try {
     res.status(500).json({ message: error.message });
 }
 });
+
 //Get User function
 async function getUser(req, res, next) {
     let user;

@@ -17,7 +17,12 @@ const productSchema = new mongoose.Schema({
         type: Object,
         required: true,
         default: Date.now,
-  }
+    },
+    creator: {
+        type: String,
+        required: true,
+    }
+
 });
 
 module.exports = mongoose.model("Product", productSchema);
