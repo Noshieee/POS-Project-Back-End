@@ -46,7 +46,7 @@ if (await bcrypt.compare(password, user.password)) {
 
 // REGISTER a user
 router.post("/", async (req, res, next) => {
-const { name, email, contact, password } = req.body;
+const { name, email, contactNumber, password } = req.body;
 
 const salt = await bcrypt.genSalt();
 const hashedPassword = await bcrypt.hash(password, salt);
@@ -54,7 +54,7 @@ const hashedPassword = await bcrypt.hash(password, salt);
 const user = new User({
     name,
     email,
-    contact,
+    contactNumber,
     password: hashedPassword,
 });
 
@@ -64,7 +64,7 @@ try {
     try {
     const access_token = jwt.sign(
         JSON.stringify(newUser),
-        process.env.JWT_SECRET_KEY
+        process.env.JWT_TOKEN_SECRET
     );
     res.status(201).json({ jwt: access_token });
     } catch (error) {

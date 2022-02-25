@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/productModel');
+
 // Getting All
 router.get('/', async (req, res) => {
   try {
@@ -10,18 +11,21 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 // Getting One
 router.get('/:id', getProduct, (req, res) => {
   res.send(res.product);
 });
+
 //Creating One
 router.post('/', async (req, res) => {
-  const product = new Product({
-    title: req.body.title,
-    price: req.body.price,
-    category: req.body.category,
-    img: req.body.img
-  });
+    const {title ,price ,category, img} = req.body
+    const product = new Product({
+        title,
+        price,
+        category,
+        img
+    });
   try {
     const newProduct = await product.save();
     res.status(201).json(newProduct);
@@ -29,30 +33,25 @@ router.post('/', async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+
 //Updating One
 router.put('/:id', getProduct, async (req, res) => {
-  if (req.body.title != null) {
-    res.product.title = req.body.title;
-  }
-  if (req.body.price != null) {
-    res.product.price = req.body.price;
-  }
-  if (req.body.category != null) {
-    res.product.category = req.body.category;
-  }
-  if (req.body.img != null) {
-    res.product.img = req.body.img;
-  }
+    const {title, price, category, img} = req.body;
+  if (title) { res.product.title = title };
+  if (price) { res.product.price = price };
+  if (category) { res.product.category = category };
+  if (img) { res.product.img = img };
   try {
     const updatedProduct = await res.product.save();
-    res.json(updatedProduct);
+    res.status(201).json(updatedProduct);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
+
 //Deleting One
 router.delete('/:id', getProduct, async (req, res) => {
-  try {
+    try {
     await res.product.remove();
     res.json({ message: "Product Deleted" });
   } catch (err) {
