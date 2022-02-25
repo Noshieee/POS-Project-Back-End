@@ -1,19 +1,33 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    id: {
+    name: {
         type: String,
-        required: true
-    },
-    subscribedToChannel: {
+        required: true,
+      },
+    email: {
         type: String,
-        required: true
-    },
-    subscribeDate: {
+        required: true,
+        unique: true,
+      },
+    contactNumber: {
+        type: String,
+        required: true,
+      },
+    password: {
+        type: String,
+        required: true,
+      },
+    avatar: {
+        type: String,
+        required: false,
+        default: null,
+      },
+    joinDate: {
         type: Date,
         required: true,
-        default: Date.now
-    }
+        default: Date.now,
+      },
 });
 
-module.exports = mongoose.model('User', subscriberSchema)
+module.exports = mongoose.model('User', userSchema)

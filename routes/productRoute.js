@@ -11,16 +11,16 @@ router.get('/', async (req, res) => {
   }
 });
 // Getting One
-router.get("/:id", getProduct, (req, res) => {
-  res.send(req.product);
+router.get('/:id', getProduct, (req, res) => {
+  res.send(res.product);
 });
 //Creating One
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   const product = new Product({
     title: req.body.title,
     price: req.body.price,
     category: req.body.category,
-    img: req.body.img,
+    img: req.body.img
   });
   try {
     const newProduct = await product.save();
@@ -30,9 +30,9 @@ router.post("/", async (req, res) => {
   }
 });
 //Updating One
-router.put("/:id", getProduct, async (req, res) => {
-  if (req.body.name != null) {
-    res.product.name = req.body.name;
+router.put('/:id', getProduct, async (req, res) => {
+  if (req.body.title != null) {
+    res.product.title = req.body.title;
   }
   if (req.body.price != null) {
     res.product.price = req.body.price;
@@ -40,7 +40,7 @@ router.put("/:id", getProduct, async (req, res) => {
   if (req.body.category != null) {
     res.product.category = req.body.category;
   }
-  if (req.body.category != null) {
+  if (req.body.img != null) {
     res.product.img = req.body.img;
   }
   try {
@@ -51,7 +51,7 @@ router.put("/:id", getProduct, async (req, res) => {
   }
 });
 //Deleting One
-router.delete("/:id", getProduct, async (req, res) => {
+router.delete('/:id', getProduct, async (req, res) => {
   try {
     await res.product.remove();
     res.json({ message: "Product Deleted" });

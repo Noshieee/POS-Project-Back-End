@@ -4,104 +4,119 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const User = require('../models/userModels')
 
-//USER REGISTRATION
-router.post('/', async (req, res) => {
-const { name, email, contact, password} = req.body
-if (!name || !email || !contact || !password)
-    res.status(400).send({ msg: "Not all fields have been submitted"});
+// GET all users
+router.get("/", async (req, res) => {
+    try {
+      const users = await User.find();
+      res.json(users);
+    } catch (error) {
+      res.status(500).send({ message: error.message });
+    }
+  });
+  
+// GET one user
+router.get("/:id", getUser, (req, res, next) => {
+res.send(res.user);
+});
 
+// LOGIN user with email + password
+router.patch("/", async (req, res, next) => {
+const { email, password } = req.body;
+const user = await User.findOne({ email });
+
+if (!user) res.status(404).json({ message: "Could not find user" });
+if (await bcrypt.compare(password, user.password)) {
+    try {
+    const access_token = jwt.sign(
+        JSON.stringify(user),
+        process.env.JWT_SECRET_KEY
+    );
+    res.status(201).json({ jwt: access_token });
+    } catch (error) {
+    res.status(500).json({ message: error.message });
+    }
+} else {
+    res
+    .status(400)
+    .json({ message: "Email and password combination do not match" });
+}
+});
+
+// REGISTER a user
+router.post("/", async (req, res, next) => {
+const { name, email, contact, password } = req.body;
+
+const salt = await bcrypt.genSalt();
+const hashedPassword = await bcrypt.hash(password, salt);
+
+const user = new User({
+    name,
+    email,
+    contact,
+    password: hashedPassword,
+});
+
+try {
+    const newUser = await user.save();
+
+    try {
+    const access_token = jwt.sign(
+        JSON.stringify(newUser),
+        process.env.JWT_SECRET_KEY
+    );
+    res.status(201).json({ jwt: access_token });
+    } catch (error) {
+    res.status(500).json({ message: error.message });
+    }
+} catch (error) {
+    res.status(400).json({ message: error.message });
+}
+});
+  
+// UPDATE a user
+router.put("/:id", getUser, async (req, res, next) => {
+const { name, contactNumber, password, avatar, about } = req.body;
+if (name) res.user.name = name;
+if (contactNumber) res.user.contact = contactNumber;
+if (avatar) res.user.avatar = avatar;
+if (about) res.user.about = about;
+if (password) {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
+    res.user.password = hashedPassword;
+}
 
-    var sql = `INSERT INTO users (user_name, user_email, user_contact, user_password) VALUES ('${name}', '${email}', '${contact}', '${hashedPassword}')`;
-    con.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log("1 record inserted");
-      res.send({ msg: "User created" });
-    });
-});
-// GET ALL USERS
-router.get('/', (req, res)=>{
-    var sql = `SELECT * FROM users`;
-    con.query(sql, function (err, result) {
-        if (err) throw err;
-        console.log('All Records retrieved');
-        res.send(result);
-    });
-});
-// GET ONE
-router.get('/:id', (req, res,next)=>{
-    var sql = `SELECT * FROM users WHERE user_id=${req.params.id}`;
-    con.query(sql, function (err, result) {
-        if (err) throw err;
-        console.log('1 record received');
-        res.send(result)
-    });
-});
-// DELETE ONE
-router.delete('/:id', (req, res)=>{
-    var sql = `DELETE FROM users WHERE user_id=${req.params.id}`;
-    con.query(sql, function (err, result) {
-        if (err) throw err;
-        console.log('1 record deleted');
-        res.send(result)
-    });
-});
-// UPDATE USER WITH ID
-router.put('/:id', (req, res) => {
-    const { name, email, contact, password, avatar, about } = req.body
-    let sql = `UPDATE users SET `;
-
-    if(name) sql += `user_name = '${name}',`;
-    if(email) sql += `user_email = '${email}',`;
-    if(contact) sql += `user_contact = '${contact}',`;
-    if(password) sql += `user_password = '${password}',`;
-    if(avatar) sql += `user_avatar = '${avatar}',`;
-    if(about) sql += `user_about = '${about}',`;
-
-    if(sql.endsWith(',')) sql = sql.substring(0, sql.length-1)
-
-    sql += ` WHERE user_id=${req.params.id}`;
-
-    con.query(sql, function (err, result) {
-        if (err) throw err;
-        console.log("1 record updated");
-        res.send(result);
-    });
-});
-// SIGN IN USER
-router.patch('/', (req, res) => {
-    const { email, password } = req.body;
-    var sql = `SELECT * FROM users WHERE user_email='${email}'`;
-    con.query(sql, async function (err, result) {
-       const user = result[0];
-       const match = await bcrypt.compare(password, user.user_password);
-       if (match){
-           console.log(user);
-           try {
-               const access_token = jwt.sign(JSON.stringify(user), process.env.ACCESS_TOKEN_SECRET);
-               res.json({ jwt: access_token });
-           } catch (error) {
-               console.log(error);
-           }
-       } else {
-           res.send('Email and Password dont match')
-       }
-    })
-    .on('error', () => {
-        res.send('Could not fetch from Database');
-    });
+try {
+    const updatedUser = await res.user.save();
+    res.status(201).send(updatedUser);
+} catch (error) {
+    res.status(400).json({ message: error.message });
+}
 });
 
-//GET USER
-router.get('/', async (req, res) => {
-    try{
-        const subscribers = await Subscriber.find()
-        res.json(subscribers)
-    } catch (err) {
-        res.status(500).json({ msg: err.message })
+// DELETE a user
+router.delete("/:id", getUser, async (req, res, next) => {
+try {
+    await res.user.remove();
+    res.json({ message: "Deleted user" });
+} catch (error) {
+    res.status(500).json({ message: error.message });
+}
+});
+//Get User function
+async function getUser(req, res, next) {
+    let user;
+    try {
+        user = await User.findById(req.params.id);
+
+    if (!user) res.status(404).json({ message: "Could not find user" });
+    } catch (error) {
+    res.status(500).json({ message: error.message });
     }
-});
+    res.user = user;
+    next();
+}
 
 module.exports = router;
