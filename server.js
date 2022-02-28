@@ -1,4 +1,4 @@
-require('dotenv').config();
+// require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -12,6 +12,7 @@ db.once('open', () => console.log('Connected to Database'))
 const app = express();
 
 app.use(express.json())
+app,use(cors())
 
 const productsRouter = require('./routes/productRoute')
 const usersRouter = require('./routes/userRoute')
