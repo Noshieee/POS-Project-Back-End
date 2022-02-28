@@ -1,7 +1,10 @@
+require('dotenv').config;
+
 const express = require('express');
+const Product = require('../models/productModel')
 const router = express.Router();
-const Product = require('../models/productModel');
 const auth = require('../middleware/auth')
+const { getProduct } = require('../middleware/finders')
 
 // Getting All
 router.get('/', auth, async (req, res) => {
@@ -14,7 +17,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Getting One
-router.get('/:id', auth, getProduct, (req, res, next) => {
+router.get('/:id', [auth, getProduct], (req, res, next) => {
   res.send(res.product);
 });
 
@@ -54,7 +57,7 @@ router.put('/:id', auth, getProduct, async (req, res, next) => {
 });
 
 //Deleting One
-router.delete('/:id', getProduct, async (req, res, next) => {
+router.delete('/:id', auth, getProduct, async (req, res, next) => {
     if (req.user._id !== res.product.creator)
         res.status(400).json({ msg: "You are not that guy pal." })
     try {
@@ -64,19 +67,6 @@ router.delete('/:id', getProduct, async (req, res, next) => {
     res.status(500).json({ message: err.message });
   }
 });
-//Get Product Function
-async function getProduct(req, res, next) {
-  let product;
-  try {
-    product = await Product.findById(req.params.id);
-    if (!product) {
-    res.status(404).json({ message: "Cannot find the Product You are looking for" });
-    }
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-  res.product = product;
-  next();
-}
+
 
 module.exports = router;

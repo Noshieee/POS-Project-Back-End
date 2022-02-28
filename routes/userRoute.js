@@ -1,10 +1,11 @@
 require('dotenv').config()
 
 const express = require('express');
+const User = require('../models/userModels')
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModels')
+const { getUser } = require('../middleware/finders')
 
 // GET all users
 router.get("/", async (req, res) => {
@@ -31,7 +32,7 @@ if (await bcrypt.compare(password, user.password)) {
     try {
     const access_token = jwt.sign(
         JSON.stringify(user),
-        process.env.JWT_TOKEN_KEY
+        process.env.JWT_TOKEN_SECRET
     );
     res.status(201).json({ jwt: access_token });
     } catch (error) {
@@ -105,17 +106,5 @@ try {
 });
 
 //Get User function
-async function getUser(req, res, next) {
-    let user;
-    try {
-        user = await User.findById(req.params.id);
-
-    if (!user) res.status(404).json({ message: "Could not find user" });
-    } catch (error) {
-    res.status(500).json({ message: error.message });
-    }
-    res.user = user;
-    next();
-}
 
 module.exports = router;

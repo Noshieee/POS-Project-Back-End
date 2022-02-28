@@ -1,12 +1,14 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const router = express.Router();
+const { getProduct } = require('../middleware/finders');
+const User = require('../models/userModels')
 
-router.get('/', (req, res) => {
+router.get('/', auth, (req, res) => {
     return res.send(req.user.cart)
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', { auth, getProduct }, async (req, res) => {
     const user = await user.findById(req.user._id);
     const inCart = user.cart.some(product => product._id == req.params.id)
 
@@ -32,18 +34,5 @@ router.put('/:id', async (req, res) => {
     }
 })
 
-// fetch(`/cart/${product_id}`, {
-//     method: 'PUT',
-//     headers: {
-//         authorization: `bearer ${localStorage.getItem('jwt')}`
-//     },
-//     body: {
-//         qty: 10
-//     }
-// }) .then(res => res.json())
-//    .then(data => {
-//        data.jwt
-//        this.cart = data.cart
-//    }) 
 
 module.exports = router;
