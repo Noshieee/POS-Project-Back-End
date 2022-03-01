@@ -1,38 +1,110 @@
+require('dotenv').config
+
 const express = require('express');
 const auth = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
-const { getProduct } = require('../middleware/finders');
 const User = require('../models/userModels')
-
+const { getProduct, getUser } = require('../middleware/finders');
+const Product = require('../models/productModel')
+//Get cart
 router.get('/', auth, (req, res) => {
     return res.send(req.user.cart)
 });
-
-router.put('/:id', { auth, getProduct }, async (req, res) => {
-    const user = await user.findById(req.user._id);
-    const inCart = user.cart.some(product => product._id == req.params.id)
-
-    let updatedUser;
-
-    if (inCart) {
-        const product = user.cart.find((prod) => prod._id == req.params.id);
-        product.qty += req.body.qty
-            updatedUser = await user.save()
-    } else {
-        user.cart.push({ ...res.product, qty: req.body.qty })
-            updatedUser = await user.save();
+//Post product
+router.post('/:id', [auth, getProduct], async (req, res, next) => {
+    let product = await Product.findById(req.params.id).lean();
+    const user = await User.findById(req.user._id)
+    let qty = req.body.qty;
+    let {cart} = user;
+    let added = false;
+    cart.forEach((item) => {
+        if (item._id.valueOf() == product._id.valueOf()) {
+            item.qty += qty;
+            added = true;
+        }
+    });
+    if (!added) {
+        cart.push({ ...product, qty });
     }
-
     try {
-        const access_token = jwt.sign(
-            JSON.stringify(updatedUser),
-            process.env.JWT_TOKEN_SECRET
-        );
-        res.status(201).json({ jwt: access_token, cart: updatedUser.cart });
-    } catch(err) {
-        res.status(500).json({ msg: err.message });
-    }
-})
 
+        let token = jwt.sign(
+           { _id: user._id, cart: cart },
+           process.env.JWT_TOKEN_SECRET,
+           {
+               expiresIn: 86400, //24 hours
+           }
+        );
+        const updatedUser = await user.save();
+        res.status(200).json({ updatedUser, token });
+    }   catch(err) {
+        console.log(err)
+    } next();
+});
+//Quantity change
+router.put('/:id', [auth, getProduct], async (req, res) => {
+    let product = await Product.findById(req.params.id).lean();
+    const user = await User.findById(req.user._id)
+    let qty = req.body.qty;
+    console.log(user)
+    let {cart} = user;
+    let added = false;
+    cart.forEach((item) => {
+        if (item._id.valueOf() == product._id.valueOf()) {
+            item.qty += qty;
+            added = true;
+            console.log(added);
+            console.log()
+        }
+    });
+    if (!added) {
+        cart.push({ ...product, qty });
+    }
+    try {
+
+        let token = jwt.sign(
+           { _id: user._id, cart: cart },
+           process.env.JWT_TOKEN_SECRET,
+           {
+               expiresIn: 86400, //24 hours
+           }
+        );
+        const updatedUser = await user.save();
+        res.status(200).json({ updatedUser, token });
+    }   catch(err) {
+        console.log(err)
+    }
+});
+//Clear Cart
+    router.delete("/", [auth, getUser], async (req, res) => {
+        try {
+          res.user.cart = [];
+          await res.user.save();
+          res.json({ message: "cleared cart" });
+        } catch (err) {
+          res.status(500).json({ message: err.message });
+        }
+      });
+      
+      router.delete("/:id", [auth, getUser], async (req, res) => {
+        let cart = req.cart;
+        cart.forEach((inCart) => {
+          if (inCart._id == req.params.id) {
+            cart = cart.filter((inCartItems) => inCartItems._id != req.params.id);
+          }
+        });
+        try {
+          res.user.cart = cart;
+      
+          const updated = res.user.save();
+          let access_token = jwt.sign({ _id: req.user, cart }, process.env.JWT_TOKEN_SECRET, {
+            expiresIn: 86400, // 24 hours
+          });
+          res.json({ message: "Deleted product", updated, access_token });
+        } catch (err) {
+          res.status(500).json({ message: err.message });
+        }
+      });
 
 module.exports = router;

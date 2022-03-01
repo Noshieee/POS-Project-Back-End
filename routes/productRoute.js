@@ -1,5 +1,3 @@
-// require('dotenv').config;
-
 const express = require('express');
 const Product = require('../models/productModel')
 const router = express.Router();
@@ -7,7 +5,7 @@ const auth = require('../middleware/auth')
 const { getProduct } = require('../middleware/finders')
 
 // Getting All
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const products = await Product.find();
     res.status(201).send(products);
@@ -17,7 +15,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Getting One
-router.get('/:id', [auth, getProduct], (req, res, next) => {
+router.get('/:id', getProduct, (req, res, next) => {
   res.send(res.product);
 });
 
