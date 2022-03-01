@@ -11,7 +11,6 @@ async function getUser(req, res, next) {
     res.status(500).json({ message: error.message });
     }
     res.user = user;
-    next();
 }
 
 async function getProduct(req, res, next) {

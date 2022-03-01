@@ -36,6 +36,7 @@ router.post('/:id', [auth, getProduct], async (req, res, next) => {
                expiresIn: 86400, //24 hours
            }
         );
+        user.markModified("cart")
         const updatedUser = await user.save();
         res.status(200).json({ updatedUser, token });
     }   catch(err) {
@@ -54,8 +55,6 @@ router.put('/:id', [auth, getProduct], async (req, res) => {
         if (item._id.valueOf() == product._id.valueOf()) {
             item.qty += qty;
             added = true;
-            console.log(added);
-            console.log()
         }
     });
     if (!added) {
@@ -76,35 +75,38 @@ router.put('/:id', [auth, getProduct], async (req, res) => {
         console.log(err)
     }
 });
+
 //Clear Cart
-    router.delete("/", [auth, getUser], async (req, res) => {
-        try {
-          res.user.cart = [];
-          await res.user.save();
-          res.json({ message: "cleared cart" });
-        } catch (err) {
-          res.status(500).json({ message: err.message });
+router.delete("/", [auth, getUser], async (req, res) => {
+    try {
+        res.user.cart = [];
+        await res.user.save();
+        res.json({ message: "cleared cart" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+    });
+
+//Remove Product
+router.delete("/:id", [auth, getUser], async (req, res) => {
+    let {cart} = req.user.cart;
+    console.log(cart)
+    cart.forEach((inCart) => {
+        if (inCart._id == req.params.id) {
+        cart = cart.filter((inCartItems) => inCartItems._id != req.params.id);
         }
-      });
-      
-      router.delete("/:id", [auth, getUser], async (req, res) => {
-        let cart = req.cart;
-        cart.forEach((inCart) => {
-          if (inCart._id == req.params.id) {
-            cart = cart.filter((inCartItems) => inCartItems._id != req.params.id);
-          }
+    }); console.log(inCart)
+    try {
+        req.user.cart = cart;
+
+        const updated = res.user.save();
+        let access_token = jwt.sign({ _id: req.user, cart }, process.env.JWT_TOKEN_SECRET, {
+        expiresIn: 86400, // 24 hours
         });
-        try {
-          res.user.cart = cart;
-      
-          const updated = res.user.save();
-          let access_token = jwt.sign({ _id: req.user, cart }, process.env.JWT_TOKEN_SECRET, {
-            expiresIn: 86400, // 24 hours
-          });
-          res.json({ message: "Deleted product", updated, access_token });
-        } catch (err) {
-          res.status(500).json({ message: err.message });
-        }
-      });
+        res.json({ message: "Deleted product", updated, access_token });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+    });
 
 module.exports = router;
