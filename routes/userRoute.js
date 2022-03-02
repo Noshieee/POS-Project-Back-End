@@ -1,5 +1,3 @@
-require('dotenv').config()
-
 const express = require('express');
 const User = require('../models/userModels')
 const router = express.Router();
@@ -20,6 +18,7 @@ router.get("/", async (req, res) => {
 // GET one user
 router.get("/:id", getUser, (req, res, next) => {
 res.send(res.user);
+console.log(user)
 });
 
 // SIGN-IN user with email & password
@@ -104,7 +103,5 @@ try {
     res.status(500).json({ message: error.message });
 }
 });
-
-//Get User function
 
 module.exports = router;

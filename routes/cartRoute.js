@@ -18,6 +18,7 @@ router.post('/:id', [auth, getProduct], async (req, res, next) => {
     let qty = req.body.qty;
     let {cart} = user;
     let added = false;
+
     cart.forEach((item) => {
         if (item._id.valueOf() == product._id.valueOf()) {
             item.qty += qty;
@@ -77,10 +78,11 @@ router.put('/:id', [auth, getProduct], async (req, res) => {
 });
 
 //Clear Cart
-router.delete("/", [auth, getUser], async (req, res) => {
+router.delete("/", [auth], async (req, res) => {
+    let {cart} = req.updatedUser.cart ;
     try {
-        res.user.cart = [];
-        await res.user.save();
+        cart = [];
+        await user.save();
         res.json({ message: "cleared cart" });
     } catch (err) {
         res.status(500).json({ message: err.message });
